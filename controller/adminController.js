@@ -10,7 +10,7 @@ const { sendEmail } = require("../config/email");
 const { secret } = require("../config/secret");
 
 // register
-const registerAdmin = async (req, res,next) => {
+const registerAdmin = async (req, res, next) => {
   try {
     const isAdded = await Admin.findOne({ email: req.body.email });
     if (isAdded) {
@@ -40,7 +40,7 @@ const registerAdmin = async (req, res,next) => {
   }
 };
 // login admin
-const loginAdmin = async (req, res,next) => {
+const loginAdmin = async (req, res, next) => {
   // console.log(req.body)
   try {
     const admin = await Admin.findOne({ email: req.body.email });
@@ -66,7 +66,7 @@ const loginAdmin = async (req, res,next) => {
   }
 };
 // forget password
-const forgetPassword = async (req, res,next) => {
+const forgetPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     const admin = await Admin.findOne({ email: email });
@@ -108,20 +108,18 @@ const forgetPassword = async (req, res,next) => {
   }
 };
 // confirm-forget-password
-const confirmAdminForgetPass = async (req, res,next) => {
+const confirmAdminForgetPass = async (req, res, next) => {
   try {
     const { token, password } = req.body;
     const admin = await Admin.findOne({ confirmationToken: token });
-
+    console.log(admin)
     if (!admin) {
       return res.status(403).json({
         status: "fail",
         message: "Invalid token",
       });
     }
-
-    const expired = new Date() > new Date(user.confirmationTokenExpires);
-
+    const expired = new Date() > new Date(admin.confirmationTokenExpires);
     if (expired) {
       return res.status(401).json({
         status: "fail",
@@ -138,7 +136,6 @@ const confirmAdminForgetPass = async (req, res,next) => {
       admin.confirmationTokenExpires = undefined;
 
       await admin.save({ validateBeforeSave: false });
-
       res.status(200).json({
         message: "Password reset successfully",
       });
@@ -149,20 +146,20 @@ const confirmAdminForgetPass = async (req, res,next) => {
 };
 
 // change password
-const changePassword = async (req,res,next) => {
+const changePassword = async (req, res, next) => {
   try {
-    const {email,oldPass,newPass} = req.body || {};
+    const { email, oldPass, newPass } = req.body || {};
     const admin = await Admin.findOne({ email: email });
     // Check if the admin exists
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
     }
-    if(!bcrypt.compareSync(oldPass, admin.password)){
+    if (!bcrypt.compareSync(oldPass, admin.password)) {
       return res.status(401).json({ message: "Incorrect current password" });
     }
     else {
       const hashedPassword = bcrypt.hashSync(newPass);
-      await Admin.updateOne({email:email},{password:hashedPassword})
+      await Admin.updateOne({ email: email }, { password: hashedPassword })
       res.status(200).json({ message: "Password changed successfully" });
     }
   } catch (error) {
@@ -176,7 +173,7 @@ const resetPassword = async (req, res) => {
   const staff = await Admin.findOne({ email: email });
 
   if (token) {
-    jwt.verify(token,secret.jwt_secret_for_verify,(err, decoded) => {
+    jwt.verify(token, secret.jwt_secret_for_verify, (err, decoded) => {
       if (err) {
         return res.status(500).send({
           message: "Token expired, please try again!",
@@ -192,7 +189,7 @@ const resetPassword = async (req, res) => {
   }
 };
 // add staff
-const addStaff = async (req, res,next) => {
+const addStaff = async (req, res, next) => {
   try {
     const isAdded = await Admin.findOne({ email: req.body.email });
     if (isAdded) {
@@ -201,7 +198,7 @@ const addStaff = async (req, res,next) => {
       });
     } else {
       const newStaff = new Admin({
-        name:req.body.name,
+        name: req.body.name,
         email: req.body.email,
         password: bcrypt.hashSync(req.body.password),
         phone: req.body.phone,
@@ -219,20 +216,20 @@ const addStaff = async (req, res,next) => {
   }
 };
 // get all staff
-const getAllStaff = async (req, res,next) => {
+const getAllStaff = async (req, res, next) => {
   try {
     const admins = await Admin.find({}).sort({ _id: -1 });
     res.status(200).json({
-      status:true,
-      message:'Staff get successfully',
-      data:admins
+      status: true,
+      message: 'Staff get successfully',
+      data: admins
     });
   } catch (err) {
     next(err)
   }
 };
 // getStaffById
-const getStaffById = async (req, res,next) => {
+const getStaffById = async (req, res, next) => {
   try {
     const admin = await Admin.findById(req.params.id);
     res.send(admin);
@@ -241,7 +238,7 @@ const getStaffById = async (req, res,next) => {
   }
 };
 // updateStaff
-const updateStaff = async (req, res,next) => {
+const updateStaff = async (req, res, next) => {
   try {
     const admin = await Admin.findOne({ _id: req.params.id });
     if (admin) {
@@ -252,9 +249,9 @@ const updateStaff = async (req, res,next) => {
       admin.joiningData = req.body.joiningDate;
       admin.image = req.body.image;
       admin.password =
-      req.body.password !== undefined
-        ? bcrypt.hashSync(req.body.password)
-        : admin.password;
+        req.body.password !== undefined
+          ? bcrypt.hashSync(req.body.password)
+          : admin.password;
       const updatedAdmin = await admin.save();
       const token = generateToken(updatedAdmin);
       res.send({
@@ -276,18 +273,18 @@ const updateStaff = async (req, res,next) => {
   }
 };
 // deleteStaff
-const deleteStaff = async (req, res,next) => {
+const deleteStaff = async (req, res, next) => {
   try {
     await Admin.findByIdAndDelete(req.params.id);
     res.status(200).json({
-      message:'Admin Deleted Successfully',
+      message: 'Admin Deleted Successfully',
     });
   } catch (err) {
     next(err)
   }
 };
 
-const updatedStatus = async (req, res,next) => {
+const updatedStatus = async (req, res, next) => {
   try {
     const newStatus = req.body.status;
 
